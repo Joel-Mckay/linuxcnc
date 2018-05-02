@@ -137,6 +137,9 @@ static int setServoCycleTime(double secs);
 /***********************************************************************
 *                     PUBLIC FUNCTION CODE                             *
 ************************************************************************/
+int joint_is_lockable(int joint_num) {
+    return (unlock_joints_mask & (1 << joint_num) );
+}
 
 void switch_to_teleop_mode(void) {
     int joint_num;
@@ -554,7 +557,10 @@ static int export_joint(int num, joint_hal_t * addr)
     if ((retval = hal_pin_bit_newf(HAL_OUT, &(addr->homing), mot_comp_id, "joint.%d.homing", num)) != 0) return retval;
     if ((retval = hal_pin_s32_newf(HAL_OUT, &(addr->home_state), mot_comp_id, "joint.%d.home-state", num)) != 0) return retval;
 
-    if ( unlock_joints_mask & (1 << num) ) {
+    if ((retval = hal_pin_float_newf(HAL_IN,&(addr->jjog_accel_fraction),       mot_comp_id,"joint.%d.jog-accel-fraction", num)) != 0) return retval;
+    *addr->jjog_accel_fraction = 1.0; // fraction of accel for wheel jjogs
+
+    if ( joint_is_lockable(num) ) {
         // these pins may be needed for rotary joints
         rtapi_print_msg(RTAPI_MSG_WARN,"motion.c: Creating unlock hal pins for joint %d\n",num);
         if ((retval = hal_pin_bit_newf(HAL_OUT, &(addr->unlock), mot_comp_id, "joint.%d.unlock", num)) != 0) return retval;
@@ -578,6 +584,9 @@ static int export_axis(char c, axis_hal_t * addr)
     if ((retval = hal_pin_bit_newf(HAL_IN,  &(addr->ajog_vel_mode),    mot_comp_id,"axis.%c.jog-vel-mode", c)) != 0) return retval;
     if ((retval = hal_pin_bit_newf(HAL_OUT, &(addr->kb_ajog_active),   mot_comp_id,"axis.%c.kb-jog-active", c)) != 0) return retval;
     if ((retval = hal_pin_bit_newf(HAL_OUT, &(addr->wheel_ajog_active),mot_comp_id,"axis.%c.wheel-jog-active", c)) != 0) return retval;
+
+    if ((retval = hal_pin_float_newf(HAL_IN,&(addr->ajog_accel_fraction),       mot_comp_id,"axis.%c.jog-accel-fraction", c)) != 0) return retval;
+    *addr->ajog_accel_fraction = 1.0; // fraction of accel for wheel ajogs
 
     rtapi_set_msg_level(msg);
     return 0;

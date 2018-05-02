@@ -76,8 +76,8 @@ update_spindle_bar_error_ct_max = 3
 # standard - you can't set how long the message stays up for.
 # I suggest fixing this with a PPA off the net
 # https://launchpad.net/~leolik/+archive/leolik?field.series_filter=lucid
+NOTIFY_AVAILABLE = False
 try:
-    NOTIFY_AVAILABLE = False
     import pynotify
     if not pynotify.init("Gscreen"):
         print "**** GSCREEN INFO: There was a problem initializing the pynotify module"
@@ -86,16 +86,16 @@ try:
 except:
     print "**** GSCREEN INFO: You don't seem to have pynotify installed"
 
+_AUDIO_AVAILABLE = False
 # try to add ability for audio feedback to user.
 try:
-    _AUDIO_AVAILABLE = False
     import pygst
     pygst.require("0.10")
     import gst
     _AUDIO_AVAILABLE = True
     print "**** GSCREEN INFO: audio available!"
 except:
-    print "**** GSCREEN INFO: no audio alerts available - PYGST libray not installed?"
+    print "**** GSCREEN WARNING: no audio alerts available - Is python-gst0.10 libray installed?"
 
 # BASE is the absolute path to linuxcnc base
 # libdir is the path to Gscreen python files
@@ -230,7 +230,7 @@ class Widgets:
         return r
 
 # a class for holding data
-# here we intialize the data
+# here we initialize the data
 class Data:
     def __init__(self):
         # constants for mode idenity
@@ -264,7 +264,7 @@ class Data:
         self.highlight_major = False
         self.display_order = (_REL,_DTG,_ABS)
         self.mode_order = (self._MAN,self._MDI,self._AUTO)
-        self.mode_labels = ["Manual Mode","MDI Mode","Auto Mode"]
+        self.mode_labels = [_("Manual Mode"),_("MDI Mode"),_("Auto Mode")]
         self.IPR_mode = False
         self.plot_view = ("p","x","y","y2","z","z2")
         self.task_mode = 0
@@ -531,8 +531,12 @@ class Gscreen:
         self.keylookup = keybindings.Keylookup()
 
         if _AUDIO_AVAILABLE:
-            self.audio = Player()
-            self.data.audio_available = True       
+            try:
+                self.audio = Player()
+                self.data.audio_available = True
+            except:
+                print "**** GSCREEN WARNING: Audio test failed - Is gstreamer0.10-plugins-base installed?"
+                self.data.audio_available = False
 
         # access to EMC control
         self.emc = emc_interface.emc_control(linuxcnc)
@@ -602,7 +606,7 @@ class Gscreen:
         dbg("**** GSCREEN INFO: Preference file path: %s"%temp)
         self.prefs = preferences.preferences(temp)
 
-        # Intialize prefereces either from the handler file or from Gscreen
+        # Initialize prefereces either from the handler file or from Gscreen
         if "initialize_preferences" in dir(self.handler_instance):
             self.handler_instance.initialize_preferences()
         else:
@@ -1243,7 +1247,7 @@ class Gscreen:
             expects widget to be named statusbar1
         """
         self.statusbar_id = self.widgets.statusbar1.get_context_id("Statusbar1")
-        self.homed_status_message = self.widgets.statusbar1.push(1,"Ready For Homing")
+        self.homed_status_message = self.widgets.statusbar1.push(1,_("Ready For Homing"))
 
     def init_entry(self):
         return
@@ -1304,10 +1308,10 @@ class Gscreen:
         model = self.widgets.theme_choice.get_model()
         model.clear()
         # add the default system theme
-        model.append(("Follow System Theme",))
+        model.append((_("Follow System Theme"),))
         # if there is a local custom theme add it
         if self.data.local_theme:
-            model.append(("Local Config Theme",))
+            model.append((_("Local Config Theme"),))
         themes = []
         # add user themes
         if os.path.exists(userthemedir):
@@ -1415,7 +1419,7 @@ class Gscreen:
         for axis in self.data.axis_list:
             self.data.sensitive_on_off.append("axis_%s"% axis)
 
-    # buttons that need to be sensitive based on the interpeter runing or being idle
+    # buttons that need to be sensitive based on the interpreter running or being idle
     def init_sensitive_run_idle(self):
         """creates a list of widgets that need to be sensitive to interpeter run/idle
            list is held in data.sensitive_run/idle
@@ -2525,12 +2529,12 @@ class Gscreen:
             self.emc.estop_reset(1)
         elif not self.data.machine_on:
             self.emc.machine_on(1)
-            self.widgets.on_label.set_text("Machine On")
+            self.widgets.on_label.set_text(_("Machine On"))
             self.add_alarm_entry(_("Machine powered on"))
         else:
             self.emc.machine_off(1)
             self.emc.estop(1)
-            self.widgets.on_label.set_text("Machine Off")
+            self.widgets.on_label.set_text(_("Machine Off"))
             self.add_alarm_entry(_("Machine Estopped!"))
 
     def on_calc_clicked(self,widget):
@@ -3322,7 +3326,7 @@ class Gscreen:
                 n.set_urgency(pynotify.URGENCY_CRITICAL)
                 n.set_timeout(int(timeout * 1000) )
                 n.show()
-            if _AUDIO_AVAILABLE:
+            if self.data.audio_available:
                 if icon == ALERT_ICON:
                     self.audio.set_sound(self.data.error_sound)
                 else:
@@ -4542,7 +4546,10 @@ class Gscreen:
         systemlabel = (_("Machine"),"G54","G55","G56","G57","G58","G59","G59.1","G59.2","G59.3")
         tool = str(self.data.tool_in_spindle)
         if tool == None: tool = "None"
-        self.widgets.system.set_text(("Tool %s     %s"%(tool,systemlabel[self.data.system])))
+        self.widgets.system.set_text((_("Tool %(t)s     %(l)s")%
+             ({'t':tool,
+               'l':systemlabel[self.data.system]
+             })))
 
     def update_coolant_leds(self):
         # coolant
@@ -4571,12 +4578,12 @@ class Gscreen:
     def update_jog_rate_label(self):
         rate = round(self.status.convert_units(self.data.jog_rate),2)
         if self.data.dro_units == self.data._MM:
-            text = "%4.2f mm/min"% (rate)
+            text = _("%4.2f mm/min")% (rate)
         else:
-            text = "%3.2f IPM"% (rate)
+            text = _("%3.2f IPM")% (rate)
         self.widgets.jog_rate.set_text(text)
         try:
-            text = "%4.2f DPM"% (self.data.angular_jog_rate)
+            text = _("%4.2f DPM")% (self.data.angular_jog_rate)
             self.widgets.angular_jog_rate.set_text(text)
         except:
             pass
@@ -4585,15 +4592,19 @@ class Gscreen:
         # Mode / view
         modenames = self.data.mode_labels
         time = strftime("%a, %d %b %Y  %I:%M:%S %P    ", localtime())
-        self.widgets.mode_label.set_label( "%s   View -%s               %s"% (modenames[self.data.mode_order[0]],self.data.plot_view[0],time) )
+        self.widgets.mode_label.set_label( _("%(n)s   View -%(v)s               %(t)s")%
+              ({'n':modenames[self.data.mode_order[0]],
+                'v':self.data.plot_view[0],
+                't':time
+              }))
 
     def update_units_button_label(self):
         label = self.widgets.metric_select.get_label()
         data = self.data.dro_units
-        if data and not label == " mm ":
-            temp = " mm "
-        elif data == 0 and not label == "Inch":
-            temp = "Inch"
+        if data and not label == _(" mm "):
+            temp = _(" mm ")
+        elif data == 0 and not label == _("Inch"):
+            temp = _("Inch")
         else: return
         self.widgets.metric_select.set_label(temp)
 

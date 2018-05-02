@@ -4,8 +4,15 @@
 # is present and it evaluates all inifile HAL:HALFILE items in two passes.
 # HALFILE items may be halcmd files (.hal) or .tcl files
 #
+# By default, all HAL:HALFILEs are processed.  A .hal file may be
+# excluded from twopass processing by including a magic comment line
+# that begins with the text: "#NOTWOPASS" anywhere in the .hal file
+# (whitespace and case are ignored in finding this magic comment)".
+# Files identified with this magic comment are sourced by halcmd using
+# the -k (keep going) and -v (verbose) options.
+#
 # pass0:
-#       All HAL:HALFILEs are read.
+#       All HAL:HALFILEs (.hal,.tcl) are read.
 #       loadrt, loadusr commands are combined and executed at the end
 #       of pass0 loadrt commands may be invoked multiple times for the
 #       same mod_name.  The "count=", "num_chan=", and "names=" forms for
@@ -16,7 +23,7 @@
 #       loadrt line.  dbg values are ORed together.
 #
 # pass1:
-#       All HAL:HALFILES are reread, commands (except the loadrt and
+#       All HAL:HALFILEs are reread, commands (except the loadrt and
 #       loadusr completed commands) are executed and addf commands
 #       are executed in order of occurrence.
 #
@@ -122,8 +129,7 @@ proc ::tp::loadrt_substitute {arg1 args} {
   } else {
     set theargs [concat $arg1 $args]
   }
-  set parms  [split $theargs]
-  set module [lindex $parms 0]
+  set module [lindex $theargs 0]
   set pass   [passnumber]
 
   # keep track of loadrt for each module in order to detect
@@ -162,8 +168,53 @@ proc ::tp::loadrt_substitute {arg1 args} {
     }
   }
 
-  set parms   [lreplace $parms 0 0]
-  foreach pair $parms {
+  set parms   [lreplace $theargs 0 0]
+
+  # A loadrt cmd may have a complex config= with multiple items:
+  # Example:
+  # loadrt hm2_eth board_ip=n.n.n.n config="num_stepgens=n num_pwmgens=n"
+  # The parms item received here has escaped quotes:
+  #  board_ip=10.10.10.10 config=\"num_stepgens=3 num_pwmgens=2 num_encoders=2\"
+  # We have to find the escaped leading and trailing quotes and the
+  # blanks separating num_* items to assemble the config= parm.
+  # After assembling string for config=, remove the backslashes and
+  # use concat.
+
+  while {[string len $parms] > 0} {
+    set first_blank [string first " " $parms]
+    set first_escaped_quote [string first \\\" $parms]
+    set second_escaped_quote -1
+    if {$first_escaped_quote >=0} {
+       set second_escaped_quote \
+       [expr $first_escaped_quote +2 + \
+             [string first \\\" \
+                [string range $parms [expr $first_escaped_quote+2] end]] \
+       ]
+    }
+    # puts "____$first_blank $first_escaped_quote $second_escaped_quote"
+
+    if {$first_blank < 0} {
+      set pair $parms
+      set parms ""
+      #puts A_newparms=<$parms>
+    } else {
+      if {  ($first_escaped_quote< 0)
+          ||($first_escaped_quote>=0)&&($first_blank<$first_escaped_quote)
+         } {
+        set pair  [string range $parms 0 [expr $first_blank -1]]
+        set parms [string range $parms [expr $first_blank +1] end]
+        #puts B_newparms=<$parms>
+      } else {
+        set pair [string range $parms 0 [expr $second_escaped_quote +1]]
+        set pair [string map {\\ ""} $pair] ;# remove \" items
+        set pair "\[concat $pair\]"         ;# use concat
+        set parms [string range $parms [expr $second_escaped_quote +3] end]
+        #puts C_newparms=<$parms>
+      }
+    }
+    # handle "\n" (ref lcd.c component)
+    set pair [string map {\n \\n} $pair]
+
     set l     [split $pair =]
     set item  [lindex $l 0]
     set value [lindex $l 1]
@@ -230,7 +281,7 @@ proc ::tp::loadrt_substitute {arg1 args} {
                }
              }
     }
-  } ;# foreach pair
+  } ;# while
 } ;# loadrt_substitute
 
 proc ::tp::addf_substitute {args} {
@@ -330,11 +381,17 @@ proc ::tp::prep_the_files {} {
              lappend ::TP(runfiles) $f
              verbose "tclfile: $f"
             }
-        hal {set ::TP($f,tmp) /tmp/[file tail $f].tmp
-             verbose "convert $f to $::TP($f,tmp)"
-             hal_to_tcl $f $::TP($f,tmp)
-             lappend ::TP(runfiles) $::TP($f,tmp)
-             set ::TP(origfile,$::TP($f,tmp)) $f
+        hal {
+             set ::TP($f,tmp) /tmp/[file tail $f].tmp
+             set converted_file [hal_to_tcl $f $::TP($f,tmp)]
+             if {"$converted_file" == ""} {
+                puts "twopass:Sourcing $f WITHOUT twopass processing"
+                eval exec halcmd -vkf $f &
+             } else {
+               verbose "converted $f to $converted_file"
+               lappend ::TP(runfiles) $converted_file
+               set ::TP(origfile,$converted_file) $f
+             }
         }
         default {return -code error \
                 "prep_the_files:unknown file type <$suffix>"}
@@ -372,6 +429,15 @@ proc ::tp::hal_to_tcl {ifile ofile} {
     set theline [gets $fdin]
     set line [string trim $theline]
     if {"$line" == ""} continue
+
+    # find *.hal files excluded from twopass processing:
+    set  tmpline [string map -nocase {" " ""} $line]
+    set  tmpline [string tolower $tmpline]
+    if {[string first "#notwopass" $tmpline] == 0} {
+       set notwopass 1 ;# this file will be sourced immediately
+       break
+    }
+
     if {[string first # $line] == 0} continue
     foreach suspect $::TP(conflictwords) {
       if {   ([string first "$suspect "  $line] == 0)
@@ -437,7 +503,12 @@ proc ::tp::hal_to_tcl {ifile ofile} {
   }
   close $fdin
   close $fdout
-  return $ofile
+
+  if [info exists notwopass] {
+    return "" ;# indicates no twopass handling for this .hal file
+  } else {
+    return $ofile
+  }
 } ;# hal_to_tcl
 
 proc ::tp::source_the_files {} {

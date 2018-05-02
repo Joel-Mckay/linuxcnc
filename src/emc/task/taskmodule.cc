@@ -18,6 +18,7 @@
  */
 // TODO: reuse interp converters
 
+#define BOOST_PYTHON_MAX_ARITY 7
 #include <boost/python/class.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/implicit.hpp>
@@ -254,15 +255,15 @@ BOOST_PYTHON_MODULE(emctask) {
     def("operator_error",
 	operator_error,
 	operator_error_overloads ( args("id"),
-				   "send an error messsage to the operator screen with an optional message id"  ));
+				   "send an error message to the operator screen with an optional message id"  ));
     def("operator_text",
 	operator_text,
 	operator_text_overloads ( args("id"),
-				   "send a informational messsage to the operator screen"  ));
+				   "send a informational message to the operator screen"  ));
     def("operator_display",
 	operator_display,
 	operator_display_overloads ( args("id"),
-				   "send a messsage to the operator display"  ));
+				   "send a message to the operator display"  ));
 
 
 #define VAL(X)  .value(#X, X)
@@ -324,6 +325,8 @@ BOOST_PYTHON_MODULE(emctask) {
 	.def_readonly("tooltable_filename", &Task::tooltable_filename)
 	;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     class_ <EMC_TRAJ_STAT, noncopyable>("EMC_TRAJ_STAT",no_init)
 	.def_readwrite("linearUnits", &EMC_TRAJ_STAT::linearUnits )
 	.def_readwrite("angularUnits", &EMC_TRAJ_STAT::angularUnits )
@@ -360,7 +363,7 @@ BOOST_PYTHON_MODULE(emctask) {
 	.def_readwrite("adaptive_feed_enabled", &EMC_TRAJ_STAT::adaptive_feed_enabled )
 	.def_readwrite("feed_hold_enabled", &EMC_TRAJ_STAT::feed_hold_enabled )
 	;
-
+#pragma GCC diagnostic pop
     class_ <EMC_JOINT_STAT, noncopyable>("EMC_JOINT_STAT",no_init)
 	.def_readwrite("units", &EMC_JOINT_STAT::units)
 	.def_readwrite("backlash", &EMC_JOINT_STAT::backlash)

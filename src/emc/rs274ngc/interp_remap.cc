@@ -13,6 +13,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#define BOOST_PYTHON_MAX_ARITY 4
 #include "python_plugin.hh"
 #include "interp_python.hh"
 #include <boost/python/list.hpp>
@@ -140,7 +141,7 @@ int Interp::convert_remapped_code(block_pointer block,
     block_pointer eblock = &EXECUTING_BLOCK(*settings);
     eblock->call_type = CT_REMAP; 
     CHKS(status != INTERP_OK,
-	 "convert_remapped_code: inital read returned %s",
+	 "convert_remapped_code: initial read returned %s",
 	 interp_status(status));
     return(- phase);
 }

@@ -1482,6 +1482,8 @@ class GlCanonDraw:
                 positions[0] = x * math.cos(t) - y * math.sin(t)
                 positions[1] = x * math.sin(t) + y * math.cos(t)
                 positions = [(i-j) for i, j in zip(positions, s.g92_offset)]
+            else:
+                positions = list(positions)
 
             if self.get_a_axis_wrapped():
                 positions[3] = math.fmod(positions[3], 360.0)
@@ -1573,6 +1575,7 @@ class GlCanonDraw:
 
             if self.get_show_machine_speed():
                 posstrs.append(format % ("Vel", spd))
+                droposstrs.append(diaformat % ("Vel", spd))
 
             if self.get_show_distance_to_go():
                 posstrs.append(format % ("DTG", dtg))

@@ -132,6 +132,9 @@ try:
     root_window.tk.call("set","::STATE_ESTOP_RESET"  ,linuxcnc.STATE_ESTOP_RESET)
     root_window.tk.call("set","::STATE_OFF"          ,linuxcnc.STATE_OFF)
     root_window.tk.call("set","::STATE_ON"           ,linuxcnc.STATE_ON)
+    root_window.tk.call("set","::TASK_MODE_MANUAL"   ,linuxcnc.MODE_MANUAL)
+    root_window.tk.call("set","::TASK_MODE_MDI"      ,linuxcnc.MODE_MDI)
+    root_window.tk.call("set","::TASK_MODE_AUTO"     ,linuxcnc.MODE_AUTO)
     root_window.tk.call("set","::INTERP_IDLE"        ,linuxcnc.INTERP_IDLE)
     root_window.tk.call("set","::INTERP_READING"     ,linuxcnc.INTERP_READING)
     root_window.tk.call("set","::INTERP_PAUSED"      ,linuxcnc.INTERP_PAUSED)
@@ -190,6 +193,7 @@ help1 = [
     (_("End"), _("Set G54 offset for active axis")),
     (_("Ctrl-End"), _("Set tool offset for loaded tool")),
     ("-, =", _("Jog active axis or joint")),
+    (";, '", _("Select Max velocity")),
 
     ("", ""),
     (_("Left, Right"), _("Jog first axis or joint")),
@@ -2137,7 +2141,8 @@ class TclCommands(nf.TclCommands):
             ((_("All files"), "*"),)
         f = root_window.tk.call("tk_getOpenFile", "-initialdir", open_directory,
             "-filetypes", types)
-        if not f: return
+        if type(f) is tuple and not len(f): return
+        if not len(str(f)): return
         o.set_highlight_line(None)
         f = str(f)
         open_directory = os.path.dirname(f)
@@ -3397,18 +3402,18 @@ while ((s.joints == 0) or (s.kinematics_type < linuxcnc.KINEMATICS_IDENTITY)):
     s.poll()
 
 if s.kinematics_type == linuxcnc.KINEMATICS_IDENTITY:
-    ja_name = "Axes"
+    ja_name = _("Axes")
 else:
-    ja_name = "Joints"
+    ja_name = _("Joints")
 if homing_order_defined:
     widgets.homebutton.configure(text=_("Home All"), command="home_all_joints")
     root_window.tk.call("DynamicHelp::add", widgets.homebutton,
-            "-text", _("Home all %s [Ctrl-Home]" % ja_name))
+            "-text", _("Home all %s [Ctrl-Home]") % ja_name)
     widgets.homemenu.add_command(command=commands.home_all_joints)
     root_window.tk.call("setup_menu_accel", widgets.homemenu, "end",
-            _("Home All %s" % ja_name))
+            _("Home All %s") % ja_name)
 widgets.unhomemenu.add_command(command=commands.unhome_all_joints)
-root_window.tk.call("setup_menu_accel", widgets.unhomemenu, "end", _("Unhome All %s" % ja_name))
+root_window.tk.call("setup_menu_accel", widgets.unhomemenu, "end", _("Unhome All %s") % ja_name)
 
 kinsmodule=inifile.find("KINS", "KINEMATICS")
 kins_is_trivkins = False
@@ -3480,7 +3485,7 @@ num_joints = s.joints
 gave_individual_homing_message = ""
 for jnum in range(num_joints):
     if s.kinematics_type == linuxcnc.KINEMATICS_IDENTITY:
-        ja_name = "Axis"
+        ja_name = _("Axis ")
         ja_id = aletter_for_jnum(jnum)
         if ja_id.lower() in duplicate_coord_letters:
             if ja_id not in gave_individual_homing_message:
@@ -3497,7 +3502,7 @@ for jnum in range(num_joints):
                command=lambda jnum=jnum: commands.home_joint_number(jnum))
         widgets.unhomemenu.add_command(
                command=lambda jnum=jnum: commands.unhome_joint_number(jnum))
-        ja_name = "Joint"
+        ja_name = _("Joint")
         if joint_sequence[jnum] is '':
             ja_id = "%d"%jnum
         elif (int(joint_sequence[jnum]) < 0):
