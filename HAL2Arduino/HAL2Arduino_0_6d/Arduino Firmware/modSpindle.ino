@@ -95,6 +95,6 @@
     }
   }
   
-  void sendSpindleIndexPulse(byte axis){ // Low speed signaling ie: <600rpm
-    if(sendSpindleIndexSignal)
+ // void sendSpindleIndexPulse(byte axis){ // Low speed signaling ie: <600rpm
+// if(sendSpindleIndexSignal)
 #endif

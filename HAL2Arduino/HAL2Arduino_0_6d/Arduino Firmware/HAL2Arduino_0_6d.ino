@@ -179,10 +179,10 @@ The serial link works as follows:
 
 // When asked, request access to these commands.
 //#define commandsRequested "215 224 231 233" // 229"
-#define commandsRequested "215 224 226 231 233"
+//#define commandsRequested "215 224 226 231 233"
+#define commandsRequested "215 224 226 231 233 126"
 
 // When asked, request access to these axises (for commands that use them).
-#define axisRequested "0 1 2 3 4 5 6 7"
 #define axisRequested "0 1 2 3 4 5 6 7"
 
 // A command transmitted from the host needs time to be completed.

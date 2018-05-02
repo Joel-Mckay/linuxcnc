@@ -11,6 +11,11 @@
   #define UaxisEnableSwitches false
   #define VaxisEnableSwitches false
   #define WaxisEnableSwitches false
+  #define useProbe true
+  
+  
+  #define probePin  48 // CNC Touch probe input.
+  
   
   // 0 + axisEnabled = individually disabled switch.
   #define xMinSwitch 0
@@ -90,8 +95,14 @@
   // Setup pin arrays.
   boolean faultId[9][3]={{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
   boolean faultIdOld[9][3]={{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
+  boolean probeStateOld=false;
   
   void switchesSetup(){
+  
+    #if useProbe && XaxisEnableSwitches
+      pinMode(probePin,INPUT_PULLUP);
+    #endif
+    
     #if xMinSwitch && XaxisEnableSwitches
       pinMode(xMinSwitch,INPUT_PULLUP);
     #endif
@@ -187,6 +198,8 @@
   void checkSwitches(){
     boolean switchState;
     int faultCount=0;
+
+      
     #if XaxisEnableSwitches
       #if xMinSwitch
         switchState=digitalRead(xMinSwitch);
@@ -606,6 +619,22 @@
         faultCount+=switchState;
       #endif
     #endif
+    
+        
+	#if useProbe
+        switchState=digitalRead(xMinSwitch);
+	if(probeStateOld != switchState)
+	{
+	      probeStateOld=switchState; 
+	      Serial.print("126 ");
+              Serial.print(0);
+              Serial.print(" ");
+              Serial.print(probeStateOld);
+              Serial.print(" ");
+              Serial.print(126+0+probeStateOld);
+              Serial.println(";");
+      }
+	#endif
     
     if(faultCount!=faultCountOld){ //One or more switches has changed.
       canMove=0;

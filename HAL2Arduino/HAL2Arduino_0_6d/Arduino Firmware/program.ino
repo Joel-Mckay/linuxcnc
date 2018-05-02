@@ -26,6 +26,12 @@ void setup()
   #if useAccelStepper
     stepperSetup();
   #endif
+  #if useLimitSwitches
+    switchesSetup();
+  #endif
+  #if useSpindle
+    updateSpindle();
+  #endif
   #if useEncoder
     encoderSetup();
   #endif
