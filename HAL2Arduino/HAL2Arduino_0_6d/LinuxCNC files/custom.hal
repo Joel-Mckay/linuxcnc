@@ -1,0 +1,84 @@
+#First load the Python user module named /user/bin/HAL2Arduino-0.6.py with the name 'Hal2Arduino'
+loadusr -Wn Hal2Arduino ./HAL2Arduino-0.6d.py
+
+#Second 'unlinkp' our pins to make them available for use.
+# Then use 'net' to recreate/hook into them.
+#  Comment out any sections that your machine doesn't have.
+
+#unlinkp axis.0.motor-pos-cmd
+#net xpos-cmd axis.0.motor-pos-cmd Hal2Arduino.axis_0_motor-pos-cmd 
+
+#unlinkp axis.1.motor-pos-cmd
+#net ypos-cmd axis.1.motor-pos-cmd Hal2Arduino.axis_1_motor-pos-cmd
+
+#unlinkp axis.2.motor-pos-cmd
+#net zpos-cmd axis.2.motor-pos-cmd Hal2Arduino.axis_2_motor-pos-cmd
+
+#unlinkp axis.0.joint-pos-cmd
+#unlinkp axis.1.joint-pos-cmd
+#unlinkp axis.2.joint-pos-cmd
+
+net xpos-cmd Hal2Arduino.axis_0_joint-pos-cmd
+net ypos-cmd Hal2Arduino.axis_1_joint-pos-cmd
+net zpos-cmd Hal2Arduino.axis_2_joint-pos-cmd
+net apos-cmd Hal2Arduino.axis_3_joint-pos-cmd
+net bpos-cmd Hal2Arduino.axis_4_joint-pos-cmd
+net cpos-cmd Hal2Arduino.axis_5_joint-pos-cmd
+net upos-cmd Hal2Arduino.axis_6_joint-pos-cmd
+net vpos-cmd Hal2Arduino.axis_7_joint-pos-cmd
+#net wpos-cmd Hal2Arduino.axis_8_joint-pos-cmd
+
+unlinkp axis.0.home-sw-in
+unlinkp axis.1.home-sw-in
+unlinkp axis.2.home-sw-in
+unlinkp axis.3.home-sw-in
+unlinkp axis.4.home-sw-in
+unlinkp axis.5.home-sw-in
+unlinkp axis.6.home-sw-in
+unlinkp axis.7.home-sw-in
+#unlinkp axis.8.home-sw-in
+
+net home-X Hal2Arduino.axis_0_home-sw-in axis.0.home-sw-in
+net home-Y Hal2Arduino.axis_1_home-sw-in axis.1.home-sw-in
+net home-Z Hal2Arduino.axis_2_home-sw-in axis.2.home-sw-in
+net home-A Hal2Arduino.axis_3_home-sw-in axis.3.home-sw-in
+net home-B Hal2Arduino.axis_4_home-sw-in axis.4.home-sw-in
+net home-C Hal2Arduino.axis_5_home-sw-in axis.5.home-sw-in
+net home-U Hal2Arduino.axis_6_home-sw-in axis.6.home-sw-in
+net home-V Hal2Arduino.axis_7_home-sw-in axis.7.home-sw-in
+#net home-W Hal2Arduino.axis_8_home-sw-in axis.8.home-sw-in
+
+#unlinkp axis.0.neg-lim-sw-in
+#unlinkp axis.1.neg-lim-sw-in
+#unlinkp axis.2.neg-lim-sw-in
+#net min-X Hal2Arduino.axis_0_neg-lim-sw-in axis.0.neg-lim-sw-in
+#net min-Y Hal2Arduino.axis_1_neg-lim-sw-in axis.1.neg-lim-sw-in
+#net min-Z Hal2Arduino.axis_2_neg-lim-sw-in axis.2.neg-lim-sw-in
+
+#unlinkp axis.0.pos-lim-sw-in
+#unlinkp axis.1.pos-lim-sw-in
+#unlinkp axis.2.pos-lim-sw-in
+#net max-X Hal2Arduino.axis_0_pos-lim-sw-in axis.0.pos-lim-sw-in
+#net max-Y Hal2Arduino.axis_1_pos-lim-sw-in axis.1.pos-lim-sw-in
+#net max-Z Hal2Arduino.axis_2_pos-lim-sw-in axis.2.pos-lim-sw-in
+
+unlinkp axis.0.joint-vel-cmd
+unlinkp axis.1.joint-vel-cmd
+unlinkp axis.2.joint-vel-cmd
+unlinkp axis.3.joint-vel-cmd
+unlinkp axis.4.joint-vel-cmd
+unlinkp axis.5.joint-vel-cmd
+unlinkp axis.6.joint-vel-cmd
+unlinkp axis.7.joint-vel-cmd
+#unlinkp axis.8.joint-vel-cmd
+
+net getXspeed axis.0.joint-vel-cmd Hal2Arduino.axis_0_joint-vel-cmd
+net getYspeed axis.1.joint-vel-cmd Hal2Arduino.axis_1_joint-vel-cmd
+net getZspeed axis.2.joint-vel-cmd Hal2Arduino.axis_2_joint-vel-cmd
+net getAspeed axis.3.joint-vel-cmd Hal2Arduino.axis_3_joint-vel-cmd
+net getBspeed axis.4.joint-vel-cmd Hal2Arduino.axis_4_joint-vel-cmd
+net getCspeed axis.5.joint-vel-cmd Hal2Arduino.axis_5_joint-vel-cmd
+net getUspeed axis.6.joint-vel-cmd Hal2Arduino.axis_6_joint-vel-cmd
+net getVspeed axis.7.joint-vel-cmd Hal2Arduino.axis_7_joint-vel-cmd
+#net getWspeed axis.8.joint-vel-cmd Hal2Arduino.axis_8_joint-vel-cmd
+
