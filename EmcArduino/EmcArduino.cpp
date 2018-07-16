@@ -1,5 +1,6 @@
 /*
-This work is public domain.
+This forked work is now GPLv3.
+
 
 Please note: Although there are a LOT pin settings here.
 You can get by with as few as TWO pins per Axis. (dir & step)
